@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Control Semáforo IoT</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f3f4f6;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 10px;
+    }
+    .btn {
+      padding: 15px 30px;
+      margin: 10px;
+      border: none;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform 0.2s;
+    }
+    .btn:hover {
+      transform: scale(1.05);
+    }
+    .rojo { background-color: #e53935; }
+    .amarillo { background-color: #fbc02d; color: #333; }
+    .verde { background-color: #43a047; }
+    .canal-btn { background-color: #1976d2; }
+    .guardar { background-color: #6a1b9a; }
+    #webcam {
+      margin-top: 30px;
+    }
+    video, canvas {
+      width: 100%;
+      max-width: 480px;
+      border-radius: 10px;
+      margin: 10px auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Control del Semáforo IoT</h1>
+  <div>
+    <button class="btn rojo" onclick="enviarComando('ROJO')">Encender ROJO</button>
+    <button class="btn amarillo" onclick="enviarComando('AMARILLO')">Encender AMARILLO</button>
+    <button class="btn verde" onclick="enviarComando('VERDE')">Encender VERDE</button>
+  </div>
+
+  <button class="btn canal-btn" onclick="window.open('https://thingspeak.mathworks.com/channels/2983623', '_blank')">
+    Ver Canal Completo en ThingSpeak
+  </button>
+
+  <div id="webcam">
+    <h2>Webcam en vivo</h2>
+    <video id="video" autoplay playsinline></video>
+    <br>
+    <button class="btn" onclick="capturarFoto()">Capturar imagen</button>
+    <button class="btn guardar" onclick="guardarImagen()">Guardar imagen</button>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <script>
+    function enviarComando(comando) {
+      const apiKey = 'ZVBSGS99AO0JK1HB';
+      const talkbackId = '54876';
+      const url = `https://api.thingspeak.com/talkbacks/${talkbackId}/commands.json`;
+      const params = new URLSearchParams();
+      params.append("api_key", apiKey);
+      params.append("command_string", comando);
+
+      fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: params
+      })
+      .then(response => response.text())
+      .then(result => alert("Comando enviado: " + comando))
+      .catch(error => alert("Error al enviar comando."));
+    }
+
+    // Webcam
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        alert("No se pudo acceder a la webcam");
+        console.error(err);
+      });
+
+    function capturarFoto() {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0);
+    }
+
+    function guardarImagen() {
+      const enlace = document.createElement('a');
+      enlace.download = 'captura.png';
+      enlace.href = canvas.toDataURL('image/png');
+      enlace.click();
+    }
+  </script>
+</body>
+</html>
